@@ -39,18 +39,18 @@ class ZOEM8(object):
     def __init__(self, bus_num):
         self.bus_num = bus_num
         self.read_interval = READ_INTERVAL
-        self.utc_time = None
-        self.utc_date = None
-        self.utc = None
-        self.latitude = None
-        self.longitude = None
-        self.quality = None
-        self.num_satellites = None
-        self.horizontal_dilation = None
-        self.altitude = None
-        self.geoid_height = None
-        self.speed_over_ground = None
-        self.course_over_ground = None
+        self.utc_time = -1
+        self.utc_date = -1
+        self.utc = -1
+        self.latitude = -1
+        self.longitude = -1
+        self.quality = -1
+        self.num_satellites = -1
+        self.horizontal_dilation = -1
+        self.altitude = -1
+        self.geoid_height = -1
+        self.speed_over_ground = -1
+        self.course_over_ground = -1
 
         # initialize i2c bus
         try:
@@ -61,14 +61,66 @@ class ZOEM8(object):
         print('i2c bus initialized on bus{:2d}.'.format(bus_num))
 
     def run(self):
-        pass
+        prev_loop_start = time.time()
+        console = curses.initscr()
+        curses.noecho()
+        curses.cbreak()
+        console.keypad(True)
+        console.nodelay(True)
+        input = None
+        while True:
+            loop_start = time.time()
+            loop_time = loop_start - prev_loop_start
+            prev_loop_start = loop_start
+
+            self.read()
+
+            console.addstr(0,0,'Reading ZOE-M8Q GNSS Sensor')
+            console.addstr(1,0,'')
+            console.addstr(2,0,'UTC:')
+            console.addstr(3,0,'    Seconds: {:10d} s'.format(self.utc))
+            console.addstr(4,0,'    Date: {:6d}'.format(self.utc_date))
+            console.addstr(5,0,'    Time: {:6.3f}'.format(self.utc_time))
+            console.addstr(6,0,'')
+            console.addstr(7,0,'Position:')
+            console.addstr(8,0,'    Longitude: {:6.3f} deg'.format(self.longitude))
+            console.addstr(9,0,'    Latitude: {:6.3f} deg'.format(self.latitude))
+            console.addstr(10,0,'    Altitude: {:6.3f} deg'.format(self.altitude))
+            console.addstr(11,0,'')
+            console.addstr(12,0,'Quality: {:2d}'.format(self.quality))
+            console.addstr(13,0,'Number of Satellites: {:3d}'.format(self.num_satellites))
+            console.addstr(14,0,'Horizontal Dilation of Precision: {:2.1f}'.format(self.horizontal_dilation))
+            console.addstr(15,0,'')
+            console.addstr(16,0,'Speed-over-Ground: {:3.2f}'.format(self.speed_over_ground))
+            console.addstr(17,0,'Course-over-Ground: {:3.2f}'.format(self.course_over_ground))
+            console.addstr(18,0,'')
+            console.addstr(19,0,'Loop Cycle Time: {:4.2f} ms'.format(loop_time*1e3))
+            console.addstr(20,0,'')
+            console.addstr(21,0,'Press `q` to quit.')
+            console.refresh()
+
+            time.sleep(READ_INTERVAL)
+
+            try:
+                input = console.getkey()
+            except:
+                pass
+
+            if input == 'q':
+                curses.nocbreak()
+                console.nodelay(False)
+                console.keypad(False)
+                curses.echo()
+                curses.endwin()
+                print('Quitting ZOEM8 program.')
+                sys.exit(0)
 
     def read(self):
         c = None
         response = []
         try:
             while True: # Newline, or bad char.
-                c = self.ZOEMQ.read_byte(ZOEM8Q_ADDR)
+                c = self.ZOEM8.read_byte(ZOEM8Q_ADDR)
                 if c == 255:
                     return False
                 elif c == 10:
@@ -79,10 +131,10 @@ class ZOEM8(object):
         except IOError:
             print('i2c device on bus{:2d} disconnected!'.format(bus_num))
             exit(1)
-        except Exception, e:
+        except Exception as e:
             print(e)
 
-    def parseResponse(self):
+    def parseResponse(self, gps_line):
         gps_chars = ''.join(chr(c) for c in gps_line)
         if "*" not in gps_chars:
             return False
@@ -95,25 +147,18 @@ class ZOEM8(object):
             for ch in gps_str[1:]:
                 check_val ^= ord(ch)
             if (check_val == int(check_sum, 16)):
-                # for i, k in enumerate(
-                #     ['strType', 'fixTime',
-                #     'lat', 'latDir', 'lon', 'lonDir',
-                #     'fixQual', 'numSat', 'horDil',
-                #     'alt', 'altUnit', 'galt', 'galtUnit',
-                #     'DPGS_updt', 'DPGS_ID']):
-                #     GPSDAT[k] = gpsComponents[i]
-                print(gps_chars)
+                pass
+                # print(gps_components)
+                # print(gps_chars)
 
         if (gps_msg == "$GNRMC"):
             check_val = 0
             for ch in gps_str[1:]:
                 check_val ^= ord(ch)
             if (check_val == int(check_sum, 16)):
-                # for i, k in enumerate(
-                #     ['strType', 'fixTime',
-                #     'lat', 'latDir', 'lon', 'lonDir',
-                #     'fixQual', 'numSat', 'horDil',
-                #     'alt', 'altUnit', 'galt', 'galtUnit',
-                #     'DPGS_updt', 'DPGS_ID']):
-                #     GPSDAT[k] = gpsComponents[i]
-                print(gps_chars)
+                pass
+                # print(gps_components)
+                # print(gps_chars)
+
+zoe_m8q = ZOEM8(2)
+zoe_m8q.run()
