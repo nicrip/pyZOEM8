@@ -99,7 +99,7 @@ class ZOEM8(object):
             console.addstr(21,0,'Press `q` to quit.')
             console.refresh()
 
-            time.sleep(READ_INTERVAL)
+            time.sleep(self.read_interval)
 
             try:
                 input = console.getkey()
