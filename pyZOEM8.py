@@ -14,7 +14,7 @@ from geomag import geomag
 # ZOE-M8Q
 ZOEM8Q_ADDR             =0x42
 
-READ_INTERVAL           =0.1
+READ_INTERVAL           =0.01
 
 # initialize i2c bus
 def initBus(bus_num):
@@ -30,9 +30,9 @@ def readBytesFromBus(bus, address, offset, count):
     return [bus.read_byte(address) for k in range(count)]
 
 def signal_handler(sig, frame):
-        # curses.nocbreak()
-        # curses.echo()
-        # curses.endwin()
+        curses.nocbreak()
+        curses.echo()
+        curses.endwin()
         print('Ctrl+C force quit.')
         sys.exit(0)
 signal.signal(signal.SIGINT, signal_handler)
