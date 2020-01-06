@@ -8,6 +8,7 @@ import datetime
 import signal
 import sys
 import curses
+from geomag import geomag
 
 # Sensor-specific definitions
 # ZOE-M8Q
@@ -55,6 +56,9 @@ class ZOEM8(object):
         self.speed_over_ground = -1
         self.course_over_ground = -1
 
+        self.geomag = geomag.GeoMag()
+        self.magnetic_declination = -14.42   #declination at MIT
+
         # initialize i2c bus
         try:
             self.ZOEM8 = initBus(bus_num)
@@ -99,10 +103,11 @@ class ZOEM8(object):
             console.addstr(17,0,'')
             console.addstr(18,0,'Speed-over-Ground: {:3.2f} knots'.format(self.speed_over_ground))
             console.addstr(19,0,'Course-over-Ground: {:3.2f} deg'.format(self.course_over_ground))
-            console.addstr(20,0,'')
-            console.addstr(21,0,'Loop Cycle Time: {:4.2f} ms'.format(loop_time*1e3))
-            console.addstr(22,0,'')
-            console.addstr(23,0,'Press `q` to quit.')
+            console.addstr(20,0,'Magnetic Declination: {:3.2f} deg'.format(self.magnetic_declination))
+            console.addstr(21,0,'')
+            console.addstr(22,0,'Loop Cycle Time: {:4.2f} ms'.format(loop_time*1e3))
+            console.addstr(23,0,'')
+            console.addstr(24,0,'Press `q` to quit.')
             console.refresh()
 
             time.sleep(READ_INTERVAL)
@@ -171,6 +176,9 @@ class ZOEM8(object):
                     if longitude_sign == 'W':
                         longitude = -longitude
                     self.longitude = longitude
+                if gps_components[2] != '' and gps_components[4] != '':
+                    mag = self.geomag.GeoMag(self.latitude, self.longitude)
+                    self.magnetic_declination = mag.dec
                 if gps_components[6] != '':
                     quality = int(gps_components[6])
                     if quality == 0:
