@@ -253,5 +253,6 @@ class ZOEM8(object):
                     mode = 'invalid'
                 self.mode = mode
 
-zoe_m8q = ZOEM8(2)
-zoe_m8q.run()
+if __name__ == "__main__":
+    zoe_m8q = ZOEM8(2)
+    zoe_m8q.run()
